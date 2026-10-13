@@ -1,0 +1,33 @@
+name: embeddings
+on:
+  push:
+    branches: [main]
+    paths: ["index.html", "packs/**", "tools/**", ".github/workflows/embeddings.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: embeddings
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm i --no-save --no-package-lock @huggingface/transformers@3.0.2 sharp@0.33.5
+      - name: Build photo-search index
+        run: node tools/embed.mjs
+      - name: Commit index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add emb
+          git diff --cached --quiet && exit 0
+          git commit -m "Update photo-search index [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
