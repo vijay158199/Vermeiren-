@@ -47,7 +47,7 @@ for (const [i, id] of ids.entries()) {
 }
 const texts = ids.map(id => `a photo of a metal wheelchair part: ${part[id] || ""}. ${SHAPES[id] || ""}`.slice(0, 300));
 for (let i = 0; i < texts.length; i += 64) {
-  const tok = M.tokenizer(texts.slice(i, i + 64), { padding: true, truncation: true });
+  const tok = M.tokenizer(texts.slice(i, i + 64), { padding: "max_length", max_length: 77, truncation: true });
   const { text_embeds } = await M.text(tok);
   const d = text_embeds.dims[1];
   for (let j = 0; j < text_embeds.dims[0]; j++) txtOut.push(q8(norm(text_embeds.data.slice(j * d, (j + 1) * d))));
