@@ -96,7 +96,7 @@ window.runPhoto = async function (files) {
     const sp = scores(img, dim, n, qp), ss = scores(img, dim, n, qs), st = scores(txt, dim, n, qp);
     const zp = zs(sp, keep), zk = zs(ss, keep), zt = zs(st, keep);
     const best = {};
-    keep.forEach(i => { const id = meta.ids[i]; if (!byImg[id]) return; const z = 0.4 * zp(i) + 0.25 * zk(i) + 0.35 * zt(i);
+    keep.forEach(i => { const id = meta.ids[i]; if (!byImg[id]) return; const z = 0.55 * zp(i) + 0.3 * zk(i) + 0.15 * zt(i);
       const k = famOf[id] || id; if (!best[k] || z > best[k].z) best[k] = { id, z }; });
     const ranked = Object.values(best).sort((a, b) => b.z - a.z).slice(0, 8);
     const label = z => z >= 2.5 ? "strong match" : z >= 1.6 ? "likely" : "possible";
