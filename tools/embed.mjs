@@ -8,7 +8,11 @@ const html = fs.readFileSync("index.html", "utf8");
 const grab = name => JSON.parse(html.match(new RegExp("const " + name + "=(.*?);\\n"))[1]);
 const BASE = grab("BASE"), SHAPES = grab("SHAPES"), PACKS = grab("PACKS");
 const part = {}; for (const r of BASE) if (!part[r.img] && r.part) part[r.img] = r.part;
-const ids = Object.keys(PACKS);
+// Drawings added on the free site's Admin page (data/drawings.json, images in files/)
+const added = fs.existsSync("data/drawings.json") ? JSON.parse(fs.readFileSync("data/drawings.json", "utf8")) : [];
+const ADDED = {};
+for (const d of added) if (d.stem && !PACKS[d.stem] && d.thumb && fs.existsSync("files/" + d.thumb)) { ADDED[d.stem] = "files/" + d.thumb; if (!part[d.stem]) part[d.stem] = d.part || ""; }
+const ids = Object.keys(PACKS).concat(Object.keys(ADDED));
 const MODELS = ["Xenova/mobileclip_s0", "Xenova/clip-vit-base-patch32"];
 const DTYPE = "q8";
 
@@ -27,7 +31,7 @@ console.log("model", modelId, "drawings", ids.length);
 const norm = v => { let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) || 1; return Array.from(v, x => x / s); };
 const q8 = v => Int8Array.from(v, x => Math.max(-127, Math.min(127, Math.round(x * 127))));
 const packs = {};
-const slice = id => { const [p, o, l] = PACKS[id]; packs[p] ??= fs.readFileSync("packs/" + p + ".jpg"); return packs[p].subarray(o, o + l); };
+const slice = id => { if (ADDED[id]) return fs.readFileSync(ADDED[id]); const [p, o, l] = PACKS[id]; packs[p] ??= fs.readFileSync("packs/" + p + ".jpg"); return packs[p].subarray(o, o + l); };
 
 // Crop to the drawing area: leave out the title block (bottom right) and the side tables
 async function drawingArea(buf) {

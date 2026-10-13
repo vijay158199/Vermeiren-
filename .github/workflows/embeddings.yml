@@ -2,7 +2,7 @@ name: embeddings
 on:
   push:
     branches: [main]
-    paths: ["index.html", "packs/**", "tools/**", ".github/workflows/embeddings.yml"]
+    paths: ["index.html", "packs/**", "data/**", "tools/**", ".github/workflows/embeddings.yml"]
   workflow_dispatch:
 permissions:
   contents: write

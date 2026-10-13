@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}#admBtn{display:none!important}</style></head><body><title>Vermeiren Drawing Finder</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script src="gh.js"></script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Vermeiren Drawing Finder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
@@ -374,8 +374,8 @@ const _pk={},_tu={};
 async function getPack(p){let err;for(let i=0;i<4;i++){if(i)await new Promise(r=>setTimeout(r,800*i));try{const r=await fetch("packs/"+p+".jpg",i?{cache:"reload"}:{});if(!r.ok)throw new Error("pack "+p+" "+r.status);const b=await r.blob();if(!b.size)throw new Error("empty pack "+p);return b;}catch(e){err=e;}}throw err;}
 function packBlob(p){return _pk[p]||(_pk[p]=getPack(p).catch(e=>{delete _pk[p];throw e;}));}
 async function thumbBlob(id){const e=PACKS[id];if(e){const b=await packBlob(e[0]);return new Blob([b.slice(e[1],e[1]+e[2])],{type:"image/jpeg"});}
-  if(XT[id]){const r=await fetch("/_blob/"+XT[id]);if(!r.ok)throw new Error("asset "+r.status);return r.blob();}throw new Error("no drawing image");}
-function thumbURL(id){if(!PACKS[id]&&XT[id])return Promise.resolve("/_blob/"+XT[id]);return _tu[id]||(_tu[id]=thumbBlob(id).then(b=>URL.createObjectURL(b)).catch(e=>{delete _tu[id];throw e;}));}
+  if(XT[id]){const r=await fetch(__blob(XT[id]));if(!r.ok)throw new Error("asset "+r.status);return r.blob();}throw new Error("no drawing image");}
+function thumbURL(id){if(!PACKS[id]&&XT[id])return Promise.resolve(__blob(XT[id]));return _tu[id]||(_tu[id]=thumbBlob(id).then(b=>URL.createObjectURL(b)).catch(e=>{delete _tu[id];throw e;}));}
 function hydrate(im){thumbURL(im.dataset.t).then(u=>{im.src=u;im.onload=()=>{im.classList.add("on");const p=im.previousElementSibling;if(p&&p.classList.contains("ph"))p.hidden=true;};}).catch(()=>{const p=im.previousElementSibling;if(p&&p.classList.contains("ph"))p.textContent="No image";});}
 const io="IntersectionObserver" in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);hydrate(e.target);}}),{rootMargin:"300px"}):null;
 function observeThumbs(){document.querySelectorAll("#results img[data-t]:not([src])").forEach(im=>io?io.observe(im):hydrate(im));}
@@ -385,7 +385,7 @@ let _dcur=null;
 function showDrawingImg(id){_dcur=id;const im=$("#dimgel"),m=$("#dmsg");im.removeAttribute("src");im.hidden=true;m.hidden=false;m.textContent="Loading drawing…";m.onclick=null;
   thumbURL(id).then(u=>{if(_dcur!==id)return;im.src=u;im.hidden=false;m.hidden=true;}).catch(()=>{if(_dcur!==id)return;m.textContent="Could not load the drawing. Tap here to try again.";m.onclick=()=>showDrawingImg(id);});}
 function openDrawing(id){const r=byImg[id];if(!r)return;$("#dtitle").textContent=r.part||id;$("#dcode").textContent=`${(usedIn[id]||[]).join(", ")} · Article ${r.article||"none"} · Drawing ${r.drawing||id}`;
-  const p=$("#dpdf");if(XPDF[id]){p.href="/_blob/"+XPDF[id];p.hidden=false;}else p.hidden=true;
+  const p=$("#dpdf");if(XPDF[id]){p.href=__blob(XPDF[id]);p.hidden=false;}else p.hidden=true;
   showDrawingImg(id);$("#dimgel").classList.remove("zoom");const d=$("#dlg");if(d.showModal)d.showModal();else d.setAttribute("open","");}
 $("#dimgel").onclick=e=>e.currentTarget.classList.toggle("zoom");
 $("#dclose").onclick=()=>$("#dlg").close();
@@ -486,7 +486,7 @@ function showPage(p){page=p;adminOn=p==="admin";
   $("#login").hidden=p!=="login";document.querySelector(".layout").hidden=p==="login";document.querySelector(".bar").hidden=p==="login";
   $("#adm").hidden=!adminOn;$("#astrip").hidden=!adminOn;document.body.classList.toggle("adminmode",adminOn);
   $("#admBtn").textContent=p==="finder"?"Admin":"Back to finder";
-  const w=$("#awarn");w.hidden=!adminOn||(isEditor&&!!db);w.textContent=!window.claude?"Open this page from its claude.ai link to make changes.":"This Claude account can't save changes to the site. Open it from the account that owns it, or ask the owner for Editor access.";
+  const w=$("#awarn");w.hidden=true;w.textContent=!window.claude?"Open this page from its claude.ai link to make changes.":"This Claude account can't save changes to the site. Open it from the account that owns it, or ask the owner for Editor access.";
   if(adminOn&&!assets)$("#aFiles").disabled=true;
   if(p==="login"){$("#lerr").textContent="";setTimeout(()=>$("#lName").focus(),50);}
   render();window.scrollTo({top:0});}
@@ -498,7 +498,7 @@ $("#lform").addEventListener("submit",async e=>{e.preventDefault();const err=$("
   const n=$("#lName").value.trim(),pw=$("#lPass").value;
   let ok=false;try{ok=(await sha("vdf|"+n+"|"+pw))===ADM;}catch(_){err.textContent="This browser can't check the password here.";return;}
   if(!ok){tries++;if(tries>=5){lockUntil=Date.now()+60000;tries=0;}err.textContent="Admin name or password is wrong.";$("#lPass").value="";return;}
-  loggedIn=true;try{sessionStorage.setItem("vdf.adm","1");}catch(_){}$("#lPass").value="";$("#aWho").textContent=n;showPage("admin");});
+  loggedIn=true;try{sessionStorage.setItem("vdf.adm","1");}catch(_){}$("#lPass").value="";$("#aWho").textContent=n;showPage("admin");if(!isEditor&&localStorage.getItem("vdf.ghkey")){location.hash="#admin";location.reload();}});
 function fillAdminModels(){const s=$("#aModel"),v=s.value;s.innerHTML=`<option value="">Choose a model…</option><option value="__new">+ New model</option>`+models.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");if(v)s.value=v;}
 $("#aModel").addEventListener("change",()=>{$("#aNewWrap").hidden=$("#aModel").value!=="__new";if(!$("#aNewWrap").hidden)$("#aNew").focus();});
 const targetModel=()=>{const v=$("#aModel").value;return v==="__new"?$("#aNew").value.trim().replace(/\s+/g," "):v;};
